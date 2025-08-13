@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>依頼管理・スケジュール統合ツール</title>
+    <title>統合プロジェクト管理ツール（共同編集対応版）</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -26,11 +26,48 @@
             color: white;
             padding: 20px;
             text-align: center;
+            position: relative;
         }
         
         .header h1 {
             margin: 0;
             font-size: 2em;
+        }
+        
+        /* 共同編集ステータス表示 */
+        .collaboration-status {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .sync-info {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 11px;
+            opacity: 0.8;
         }
         
         .tab-container {
@@ -68,6 +105,27 @@
         
         .tab-content.active {
             display: block;
+        }
+        
+        /* 自動保存通知 */
+        .auto-save-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        
+        .auto-save-notification.show {
+            opacity: 1;
+            transform: translateY(0);
         }
         
         /* モーダルのスタイル */
@@ -143,6 +201,120 @@
         
         .btn-delete:hover {
             transform: translateY(-2px);
+        }
+        
+        /* 看板進捗管理テーブル */
+        .sign-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .sign-table th {
+            background-color: #4a5568;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #2d3748;
+            font-size: 12px;
+        }
+        
+        .sign-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+            font-size: 13px;
+        }
+        
+        .sign-table input,
+        .sign-table select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        
+        .sign-table .status-cell {
+            width: 100px;
+        }
+        
+        .sign-table .date-cell {
+            width: 120px;
+        }
+        
+        .sign-table .notes-cell {
+            width: 150px;
+        }
+        
+        .sign-table .no-cell {
+            width: 40px;
+        }
+        
+        .sign-table .project-cell {
+            width: 200px;
+            text-align: left;
+        }
+        
+        .sign-table .sales-cell,
+        .sign-table .assignee-cell {
+            width: 80px;
+        }
+        
+        /* チェックリストテーブル - 幅を拡張 */
+        .checklist-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .checklist-table th {
+            background-color: #2d3748;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #1a202c;
+        }
+        
+        .checklist-table td {
+            padding: 10px 8px;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+        
+        .checklist-table input[type="checkbox"] {
+            transform: scale(1.2);
+            margin: 0;
+        }
+        
+        .checklist-table .check-cell {
+            width: 60px;
+            text-align: center;
+        }
+        
+        /* 項目の幅を拡張して長い文言を表示できるようにする */
+        .checklist-table .item-cell {
+            width: 400px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .checklist-table .description-cell {
+            text-align: left;
+            color: #666;
+            font-size: 12px;
         }
         
         /* スケジュール表のスタイル */
@@ -580,18 +752,64 @@
             .date-buttons-grid {
                 grid-template-columns: repeat(4, 1fr);
             }
+            
+            .collaboration-status {
+                position: static;
+                margin-top: 10px;
+                justify-content: center;
+            }
+            
+            .sync-info {
+                position: static;
+                text-align: center;
+                margin-top: 5px;
+            }
+            
+            .sign-table th,
+            .sign-table td {
+                padding: 6px 4px;
+                font-size: 11px;
+            }
+            
+            .checklist-table th,
+            .checklist-table td {
+                padding: 6px 4px;
+                font-size: 11px;
+            }
+            
+            /* モバイルでのチェックリスト項目幅調整 */
+            .checklist-table .item-cell {
+                width: 250px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- 自動保存通知 -->
+    <div id="auto-save-notification" class="auto-save-notification">
+        データが自動保存されました
+    </div>
+
     <div class="container">
         <div class="header">
-            <h1>依頼管理・スケジュール統合ツール</h1>
+            <h1>統合プロジェクト管理ツール（共同編集対応版）</h1>
             <p id="current-date"></p>
+            
+            <!-- 共同編集ステータス -->
+            <div class="collaboration-status">
+                <div class="status-indicator"></div>
+                <span>リアルタイム同期中</span>
+            </div>
+            
+            <div class="sync-info">
+                最終更新: <span id="last-sync-time">--:--</span>
+            </div>
         </div>
         
         <div class="tab-container">
             <button class="tab active" onclick="switchTab('calendar')">カレンダー・依頼管理</button>
+            <button class="tab" onclick="switchTab('signage')">看板進捗管理</button>
+            <button class="tab" onclick="switchTab('checklist')">チェックリスト</button>
             <button class="tab" onclick="switchTab('schedule')">メンバースケジュール</button>
         </div>
         
@@ -717,6 +935,62 @@
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- 看板進捗管理タブ -->
+        <div id="signage-tab" class="tab-content">
+            <div class="controls">
+                <h3>看板依頼 進捗管理表</h3>
+                <p style="color: #666; font-size: 14px;">営業業務改善の一環として、小・中型物件の「測量＋看板落とし込み～見積依頼～デザインチェック」の工程を調査Gが担当。</p>
+                <button class="btn" onclick="addSignProject()">新規案件追加</button>
+                <button class="btn" onclick="exportSignData()">データエクスポート</button>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table class="sign-table" id="sign-table">
+                    <thead>
+                        <tr>
+                            <th class="no-cell">No.</th>
+                            <th class="project-cell">物件名</th>
+                            <th class="sales-cell">営業担当</th>
+                            <th class="assignee-cell">担当者</th>
+                            <th class="status-cell">ステータス</th>
+                            <th class="date-cell">①現地調査日<br>（測量＋看板＋精算機落とし込み）</th>
+                            <th class="date-cell">②見積依頼日<br>（調査G→営業チェック→施工へ依頼）</th>
+                            <th class="date-cell">③三橋さんへの看板データ作成依頼日<br>（デザインチェック）</th>
+                            <th class="notes-cell">備考</th>
+                            <th style="width: 60px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sign-table-body">
+                        <!-- JavaScriptで動的に生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- チェックリストタブ -->
+        <div id="checklist-tab" class="tab-content">
+            <div class="controls">
+                <h3>チェックリスト</h3>
+                <p style="color: #666; font-size: 14px;">随時更新</p>
+                <button class="btn" onclick="addChecklistItem()">チェック項目追加</button>
+                <button class="btn" onclick="resetChecklist()">チェックリセット</button>
+            </div>
+            
+            <table class="checklist-table" id="checklist-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">No.</th>
+                        <th class="check-cell">チェック</th>
+                        <th class="item-cell">項目</th>
+                        <th>内容</th>
+                    </tr>
+                </thead>
+                <tbody id="checklist-table-body">
+                    <!-- JavaScriptで動的に生成 -->
+                </tbody>
+            </table>
         </div>
         
         <!-- メンバースケジュールタブ -->
@@ -913,6 +1187,16 @@
         let editingTaskIndex = -1;
         let selectedDates = []; // 選択された実施予定日
         let selectedDateCell = null; // 選択されたカレンダーセル
+        let autoSaveTimer = null; // 自動保存タイマー
+
+        // 共同編集対応のためのローカルストレージキー
+        const STORAGE_KEYS = {
+            TASKS: 'collaborative_tasks',
+            SCHEDULES: 'collaborative_schedules',
+            SIGN_PROJECTS: 'collaborative_sign_projects',
+            CHECKLIST: 'collaborative_checklist',
+            LAST_SYNC: 'last_sync_time'
+        };
 
         // 日付処理用のヘルパー関数（タイムゾーンに依存しない）
         function formatDateToYYYYMMDD(date) {
@@ -928,8 +1212,373 @@
             return new Date(year, month - 1, day);
         }
 
-        // 依頼データ（空の配列に初期化）
+        // データ配列
         let tasks = [];
+        let schedules = {};
+        let signProjects = [];
+        let checklist = [];
+
+        // 初期データの設定
+        function initializeData() {
+            // 既存のWebサイトから依頼データを抽出して追加
+            const existingTasks = [
+                // 8月1日
+                {
+                    title: "コモンズ立川立飛 稼働立会",
+                    assignee: "平野",
+                    status: "in-progress",
+                    implementationDates: ["2025-08-01"],
+                    notes: ""
+                },
+                {
+                    title: "松江水郷祭　2日～5日",
+                    assignee: "南",
+                    status: "pending",
+                    implementationDates: ["2025-08-01", "2025-08-02", "2025-08-03", "2025-08-04", "2025-08-05"],
+                    notes: ""
+                },
+                // 8月2日
+                {
+                    title: "副都心パーキング、負の解消用の写真撮り\nゲート機、手集金小屋、実際の渋滞状況等",
+                    assignee: "藤井",
+                    status: "pending",
+                    implementationDates: ["2025-08-03"],
+                    notes: ""
+                },
+                {
+                    title: "イースト21 精算誘導用チラシ約1000枚 現地配達",
+                    assignee: "藤井",
+                    status: "pending",
+                    implementationDates: ["2025-08-03"],
+                    notes: ""
+                },
+                // 8月5日
+                {
+                    title: "ビバホームさいたま新都心　総合許可願受領",
+                    assignee: "平野",
+                    status: "pending",
+                    implementationDates: ["2025-08-05"],
+                    notes: ""
+                },
+                // 8月6～9日
+                {
+                    title: "イオンモール（鈴鹿・長久手・豊川・高岡・白山・和歌山・浜松志都呂・東浦・橿原・四條畷）現地調査",
+                    assignee: "南＆中村",
+                    status: "in-progress",
+                    implementationDates: ["2025-08-06", "2025-08-07", "2025-08-08", "2025-08-09"],
+                    notes: ""
+                },
+                // 8月8日
+                {
+                    title: "ロイヤルホームセンター川崎溝口　周辺調査",
+                    assignee: "平野",
+                    status: "pending",
+                    implementationDates: ["2025-08-08"],
+                    notes: ""
+                },
+                // 8月11日
+                {
+                    title: "ヤオコー板橋四葉店（仮称）　周辺調査",
+                    assignee: "未定",
+                    status: "pending",
+                    implementationDates: ["2025-08-11"],
+                    notes: ""
+                },
+                {
+                    title: "イースト21にsimカード対応",
+                    assignee: "藤井",
+                    status: "pending",
+                    implementationDates: ["2025-08-11"],
+                    notes: ""
+                },
+                // 8月12日
+                {
+                    title: "コースカ 新規バイクエリアの稼働状況確認",
+                    assignee: "未定",
+                    status: "pending",
+                    implementationDates: ["2025-08-12"],
+                    notes: ""
+                },
+                // 8月13日
+                {
+                    title: "イオンモール今治",
+                    assignee: "南＆藤井",
+                    status: "pending",
+                    implementationDates: ["2025-08-13"],
+                    notes: ""
+                },
+                // 8月14日
+                {
+                    title: "天神島ビジターセンター　写真撮影・電柱有無確認・周辺調査",
+                    assignee: "未定",
+                    status: "pending",
+                    implementationDates: ["2025-08-14"],
+                    notes: ""
+                },
+                // 8月15～16日
+                {
+                    title: "茅ケ崎　周辺調査（休日）➕測量",
+                    assignee: "未定",
+                    status: "pending",
+                    implementationDates: ["2025-08-15", "2025-08-16"],
+                    notes: ""
+                },
+                // 8月17日
+                {
+                    title: "ワイズマート夏見店　周辺調査＆売上予測",
+                    assignee: "藤井",
+                    status: "pending",
+                    implementationDates: ["2025-08-17"],
+                    notes: ""
+                },
+                // 8月18日
+                {
+                    title: "浦安ブライトンホテル東京ベイ　測量後、周辺調査・課金率調査",
+                    assignee: "中村",
+                    status: "pending",
+                    implementationDates: ["2025-08-18"],
+                    notes: ""
+                },
+                {
+                    title: "ルネサンス亀戸（リパーク物件）\n精算誘導、誘導員説明",
+                    assignee: "長谷川",
+                    status: "pending",
+                    implementationDates: ["2025-08-18"],
+                    notes: ""
+                },
+                // 8月20～21日
+                {
+                    title: "イオンモール姫路リバーシティ　現地調査",
+                    assignee: "未定2名",
+                    status: "pending",
+                    implementationDates: ["2025-08-20", "2025-08-21"],
+                    notes: ""
+                },
+                // 8月22～23日
+                {
+                    title: "つきみ野パーキング(ゴルフ5つきみ野店)稼働立会",
+                    assignee: "未定",
+                    status: "pending",
+                    implementationDates: ["2025-08-22", "2025-08-23"],
+                    notes: ""
+                }
+            ];
+
+            // 既存のタスクが空の場合のみ追加
+            if (tasks.length === 0) {
+                tasks = existingTasks;
+            }
+
+            // 看板進捗管理の初期データ
+            if (signProjects.length === 0) {
+                signProjects = [
+                    {
+                        id: 1,
+                        projectName: "ヤオコー八潮店",
+                        salesPerson: "日向",
+                        assignee: "平野",
+                        status: "処理中",
+                        surveyDate: "2025-05-23",
+                        estimateRequestDate: "2025-05-23",
+                        designRequestDate: "",
+                        notes: ""
+                    },
+                    {
+                        id: 2,
+                        projectName: "おさるランド＆アニタウン",
+                        salesPerson: "新沼",
+                        assignee: "南、中村",
+                        status: "処理中",
+                        surveyDate: "2025-05-29",
+                        estimateRequestDate: "2025-06-09",
+                        designRequestDate: "",
+                        notes: ""
+                    },
+                    {
+                        id: 3,
+                        projectName: "マミーマート神明町",
+                        salesPerson: "荻島",
+                        assignee: "藤井",
+                        status: "処理中",
+                        surveyDate: "2025-06-13",
+                        estimateRequestDate: "2025-06-13",
+                        designRequestDate: "",
+                        notes: ""
+                    },
+                    {
+                        id: 4,
+                        projectName: "イオンスタイル美園三丁目",
+                        salesPerson: "倉田",
+                        assignee: "平野",
+                        status: "確認待ち",
+                        surveyDate: "2025-07-09",
+                        estimateRequestDate: "2025-07-09",
+                        designRequestDate: "",
+                        notes: ""
+                    }
+                ];
+            }
+
+            // チェックリストの初期データ（スクリーンショットの文言をそのまま反映）
+            if (checklist.length === 0) {
+                checklist = [
+                    {
+                        id: 1,
+                        checked: false,
+                        projectName: "照明の必要性確認",
+                        content: "店舗の営業時間や周辺環境（住宅の有無など）を考慮"
+                    },
+                    {
+                        id: 2,
+                        checked: false,
+                        projectName: "大型看板の設置可否（特に屋上）",
+                        content: "屋上看板の設置が禁止されていないか確認"
+                    },
+                    {
+                        id: 3,
+                        checked: false,
+                        projectName: "支柱付き看板・精算機の設置制限",
+                        content: "地面への設置が制限されているエリアの有無を確認"
+                    },
+                    {
+                        id: 4,
+                        checked: false,
+                        projectName: "既存看板の再利用可否",
+                        content: "ステッカー貼替やサビの再塗装などで再利用できるか判断"
+                    },
+                    {
+                        id: 5,
+                        checked: false,
+                        projectName: "店舗側の要望確認（事前連絡）",
+                        content: "カラーイメージ、デザイン制約など特別対応が必要な場合は営業から事前に共有されているか確認"
+                    }
+                ];
+            }
+        }
+
+        // データの自動保存機能
+        function autoSaveData() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+                localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(schedules));
+                localStorage.setItem(STORAGE_KEYS.SIGN_PROJECTS, JSON.stringify(signProjects));
+                localStorage.setItem(STORAGE_KEYS.CHECKLIST, JSON.stringify(checklist));
+                localStorage.setItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
+                
+                updateLastSyncTime();
+                showAutoSaveNotification();
+                
+                console.log('データが自動保存されました');
+            } catch (error) {
+                console.error('自動保存エラー:', error);
+            }
+        }
+
+        // データの読み込み
+        function loadData() {
+            try {
+                const savedTasks = localStorage.getItem(STORAGE_KEYS.TASKS);
+                const savedSchedules = localStorage.getItem(STORAGE_KEYS.SCHEDULES);
+                const savedSignProjects = localStorage.getItem(STORAGE_KEYS.SIGN_PROJECTS);
+                const savedChecklist = localStorage.getItem(STORAGE_KEYS.CHECKLIST);
+                
+                if (savedTasks) {
+                    tasks = JSON.parse(savedTasks);
+                }
+                
+                if (savedSchedules) {
+                    schedules = JSON.parse(savedSchedules);
+                    restoreScheduleStates();
+                }
+                
+                if (savedSignProjects) {
+                    signProjects = JSON.parse(savedSignProjects);
+                }
+                
+                if (savedChecklist) {
+                    checklist = JSON.parse(savedChecklist);
+                }
+                
+                updateLastSyncTime();
+                console.log('データが読み込まれました');
+            } catch (error) {
+                console.error('データ読み込みエラー:', error);
+            }
+        }
+
+        // スケジュール状態の復元
+        function restoreScheduleStates() {
+            const currentDateStr = document.getElementById('schedule-date').value;
+            if (schedules[currentDateStr]) {
+                const timeSlots = document.querySelectorAll('.time-slot');
+                const savedStates = schedules[currentDateStr];
+                
+                timeSlots.forEach((slot, index) => {
+                    if (savedStates[index]) {
+                        const { status, text } = savedStates[index];
+                        slot.className = `time-slot ${status}`;
+                        slot.textContent = text;
+                    }
+                });
+            }
+        }
+
+        // 最終同期時刻の更新
+        function updateLastSyncTime() {
+            const lastSync = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
+            if (lastSync) {
+                const syncDate = new Date(lastSync);
+                const timeStr = syncDate.toLocaleTimeString('ja-JP', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                document.getElementById('last-sync-time').textContent = timeStr;
+            }
+        }
+
+        // 自動保存通知の表示
+        function showAutoSaveNotification() {
+            const notification = document.getElementById('auto-save-notification');
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        // 自動保存のスケジューリング
+        function scheduleAutoSave() {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+            
+            autoSaveTimer = setTimeout(() => {
+                autoSaveData();
+            }, 1000); // 1秒後に自動保存
+        }
+
+        // データ変更の監視とリアルタイム同期
+        function startRealtimeSync() {
+            // 他のタブでの変更を監視
+            window.addEventListener('storage', function(e) {
+                if (Object.values(STORAGE_KEYS).includes(e.key)) {
+                    loadData();
+                    renderCalendar();
+                    renderSignTable();
+                    renderChecklistTable();
+                    restoreScheduleStates();
+                    console.log('他のタブからの変更を検出し、データを同期しました');
+                }
+            });
+            
+            // 定期的な同期チェック（5秒間隔）
+            setInterval(() => {
+                const lastSync = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
+                if (lastSync) {
+                    updateLastSyncTime();
+                }
+            }, 5000);
+        }
 
         // タブ切り替え
         function switchTab(tabName) {
@@ -941,7 +1590,177 @@
             
             if (tabName === 'calendar') {
                 renderCalendar();
+            } else if (tabName === 'schedule') {
+                restoreScheduleStates();
+            } else if (tabName === 'signage') {
+                renderSignTable();
+            } else if (tabName === 'checklist') {
+                renderChecklistTable();
             }
+        }
+
+        // 看板進捗管理テーブルの描画
+        function renderSignTable() {
+            const tbody = document.getElementById('sign-table-body');
+            tbody.innerHTML = '';
+            
+            signProjects.forEach((project, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="no-cell">${project.id}</td>
+                    <td class="project-cell">
+                        <input type="text" value="${project.projectName}" onchange="updateSignProject(${index}, 'projectName', this.value)">
+                    </td>
+                    <td class="sales-cell">
+                        <input type="text" value="${project.salesPerson}" onchange="updateSignProject(${index}, 'salesPerson', this.value)">
+                    </td>
+                    <td class="assignee-cell">
+                        <input type="text" value="${project.assignee}" onchange="updateSignProject(${index}, 'assignee', this.value)">
+                    </td>
+                    <td class="status-cell">
+                        <select onchange="updateSignProject(${index}, 'status', this.value)">
+                            <option value="未対応" ${project.status === '未対応' ? 'selected' : ''}>未対応</option>
+                            <option value="処理中" ${project.status === '処理中' ? 'selected' : ''}>処理中</option>
+                            <option value="確認待ち" ${project.status === '確認待ち' ? 'selected' : ''}>確認待ち</option>
+                            <option value="完了" ${project.status === '完了' ? 'selected' : ''}>完了</option>
+                        </select>
+                    </td>
+                    <td class="date-cell">
+                        <input type="date" value="${project.surveyDate}" onchange="updateSignProject(${index}, 'surveyDate', this.value)">
+                    </td>
+                    <td class="date-cell">
+                        <input type="date" value="${project.estimateRequestDate}" onchange="updateSignProject(${index}, 'estimateRequestDate', this.value)">
+                    </td>
+                    <td class="date-cell">
+                        <input type="date" value="${project.designRequestDate}" onchange="updateSignProject(${index}, 'designRequestDate', this.value)">
+                    </td>
+                    <td class="notes-cell">
+                        <input type="text" value="${project.notes}" onchange="updateSignProject(${index}, 'notes', this.value)">
+                    </td>
+                    <td>
+                        <button class="btn-delete" style="font-size: 12px; padding: 5px;" onclick="deleteSignProject(${index})">削除</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 看板プロジェクトの更新
+        function updateSignProject(index, field, value) {
+            signProjects[index][field] = value;
+            scheduleAutoSave();
+        }
+
+        // 新規看板案件追加
+        function addSignProject() {
+            const newId = signProjects.length > 0 ? Math.max(...signProjects.map(p => p.id)) + 1 : 1;
+            const newProject = {
+                id: newId,
+                projectName: "",
+                salesPerson: "",
+                assignee: "",
+                status: "未対応",
+                surveyDate: "",
+                estimateRequestDate: "",
+                designRequestDate: "",
+                notes: ""
+            };
+            signProjects.push(newProject);
+            renderSignTable();
+            scheduleAutoSave();
+        }
+
+        // 看板プロジェクト削除
+        function deleteSignProject(index) {
+            if (confirm('この案件を削除しますか？')) {
+                signProjects.splice(index, 1);
+                renderSignTable();
+                scheduleAutoSave();
+            }
+        }
+
+        // チェックリストテーブルの描画
+        function renderChecklistTable() {
+            const tbody = document.getElementById('checklist-table-body');
+            tbody.innerHTML = '';
+            
+            checklist.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="text-align: center;">${item.id}</td>
+                    <td class="check-cell">
+                        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="updateChecklistItem(${index}, 'checked', this.checked)">
+                    </td>
+                    <td class="item-cell">
+                        <input type="text" value="${item.projectName}" onchange="updateChecklistItem(${index}, 'projectName', this.value)" style="font-weight: bold; width: 100%;">
+                    </td>
+                    <td class="description-cell">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" value="${item.content}" onchange="updateChecklistItem(${index}, 'content', this.value)" style="flex: 1;">
+                            <button class="btn-delete" style="font-size: 11px; padding: 3px 6px; flex-shrink: 0;" onclick="deleteChecklistItem(${index})">削除</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // チェックリスト項目の更新
+        function updateChecklistItem(index, field, value) {
+            checklist[index][field] = value;
+            scheduleAutoSave();
+        }
+
+        // 新規チェック項目追加
+        function addChecklistItem() {
+            const newId = checklist.length > 0 ? Math.max(...checklist.map(c => c.id)) + 1 : 1;
+            const newItem = {
+                id: newId,
+                checked: false,
+                projectName: "",
+                content: ""
+            };
+            checklist.push(newItem);
+            renderChecklistTable();
+            scheduleAutoSave();
+        }
+
+        // チェックリスト項目削除
+        function deleteChecklistItem(index) {
+            if (confirm('このチェック項目を削除しますか？')) {
+                checklist.splice(index, 1);
+                renderChecklistTable();
+                scheduleAutoSave();
+            }
+        }
+
+        // チェックリストリセット
+        function resetChecklist() {
+            if (confirm('全てのチェックをリセットしますか？')) {
+                checklist.forEach(item => {
+                    item.checked = false;
+                });
+                renderChecklistTable();
+                scheduleAutoSave();
+            }
+        }
+
+        // データエクスポート
+        function exportSignData() {
+            const csvContent = "No.,物件名,営業担当,担当者,ステータス,現地調査日,見積依頼日,看板データ作成依頼日,備考\n" +
+                signProjects.map(p => 
+                    `${p.id},"${p.projectName}","${p.salesPerson}","${p.assignee}","${p.status}","${p.surveyDate}","${p.estimateRequestDate}","${p.designRequestDate}","${p.notes}"`
+                ).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `看板進捗管理_${formatDateToYYYYMMDD(new Date())}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // 現在の日付を表示
@@ -1153,6 +1972,7 @@
                 tasks.splice(editingTaskIndex, 1);
                 closeEditModal();
                 renderCalendar();
+                scheduleAutoSave();
                 alert('依頼が削除されました。');
             }
         }
@@ -1185,6 +2005,7 @@
                 
                 closeEditModal();
                 renderCalendar();
+                scheduleAutoSave();
                 alert('依頼が更新されました！');
             }
         });
@@ -1201,12 +2022,14 @@
                 assignee: document.getElementById('calendar-task-assignee').value || '未定',
                 status: document.getElementById('calendar-task-status').value,
                 notes: document.getElementById('calendar-task-notes').value,
-                implementationDates: [selectedDate]
+                implementationDates: [selectedDate],
+                createdAt: new Date().toISOString()
             };
             
             tasks.push(newTask);
             renderCalendar();
             closeCalendarModal();
+            scheduleAutoSave();
             
             alert('依頼が追加されました！');
         });
@@ -1260,11 +2083,13 @@
                 assignee: document.getElementById('task-assignee').value || '未定',
                 status: document.getElementById('task-status').value,
                 notes: document.getElementById('task-notes').value,
-                implementationDates: implementationDates
+                implementationDates: implementationDates,
+                createdAt: new Date().toISOString()
             };
             
             tasks.push(newTask);
             renderCalendar();
+            scheduleAutoSave();
             
             // フォームをリセット
             this.reset();
@@ -1310,6 +2135,28 @@
             const nextIndex = (currentIndex + 1) % statuses.length;
             element.classList.add(statuses[nextIndex]);
             element.textContent = statusTexts[nextIndex];
+            
+            // スケジュール状態を保存
+            saveScheduleState();
+            scheduleAutoSave();
+        }
+
+        // スケジュール状態の保存
+        function saveScheduleState() {
+            const currentDateStr = document.getElementById('schedule-date').value;
+            const timeSlots = document.querySelectorAll('.time-slot');
+            const states = [];
+            
+            timeSlots.forEach(slot => {
+                const classList = Array.from(slot.classList);
+                const status = classList.find(cls => ['available', 'service-g', 'busy'].includes(cls));
+                states.push({
+                    status: status,
+                    text: slot.textContent
+                });
+            });
+            
+            schedules[currentDateStr] = states;
         }
 
         function updateScheduleDate() {
@@ -1324,6 +2171,9 @@
                 };
                 document.getElementById('current-date').textContent = 
                     date.toLocaleDateString('ja-JP', options);
+                
+                // 新しい日付のスケジュール状態を復元
+                restoreScheduleStates();
             }
         }
 
@@ -1336,14 +2186,27 @@
                     slot.textContent = '空き';
                 });
                 
+                saveScheduleState();
+                scheduleAutoSave();
                 alert('スケジュールがリセットされました。');
             }
         }
 
         // ページ読み込み時の初期化
         document.addEventListener('DOMContentLoaded', function() {
+            // 初期データの設定
+            initializeData();
+            
+            // データの読み込み
+            loadData();
+            
+            // リアルタイム同期の開始
+            startRealtimeSync();
+            
             updateCurrentDate();
             renderCalendar();
+            renderSignTable();
+            renderChecklistTable();
             generateDateButtons();
             
             // デフォルト値を設定
@@ -1356,7 +2219,7 @@
             document.getElementById('start-date').min = minDate;
             document.getElementById('end-date').min = minDate;
             
-            console.log('空の依頼管理ツールが初期化されました');
+            console.log('統合プロジェクト管理ツールが初期化されました');
         });
 
         // キーボードショートカット
@@ -1365,6 +2228,11 @@
                 closeEditModal();
                 closeCalendarModal();
             }
+        });
+
+        // ページを離れる前にデータを保存
+        window.addEventListener('beforeunload', function() {
+            autoSaveData();
         });
     </script>
 </body>
