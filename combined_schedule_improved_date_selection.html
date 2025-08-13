@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>依頼管理・スケジュール統合ツール</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        
+        .tab-container {
+            display: flex;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #e2e8f0;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .tab:hover {
+            background-color: #f1f3f4;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* モーダルのスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5em;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn-delete:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* スケジュール表のスタイル */
+        .schedule-table {
+            width: auto;
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        
+        .schedule-table th {
+            background-color: #4a5568;
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 2px solid #2d3748;
+            border: 1px solid #2d3748;
+        }
+        
+        .schedule-table td {
+            padding: 12px 10px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            vertical-align: middle;
+        }
+        
+        .member-name {
+            background-color: #edf2f7;
+            font-weight: bold;
+            color: #2d3748;
+            width: 120px;
+            vertical-align: middle;
+        }
+        
+        .time-label {
+            background-color: #f7fafc;
+            font-weight: bold;
+            color: #4a5568;
+            width: 60px;
+            text-align: center;
+        }
+        
+        .time-slot {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            width: 150px;
+        }
+        
+        .time-slot:hover {
+            background-color: #f7fafc;
+            transform: scale(1.02);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .available {
+            background-color: #c6f6d5;
+            color: #22543d;
+            font-weight: bold;
+        }
+        
+        .service-g {
+            background-color: #bee3f8;
+            color: #2a4365;
+            font-weight: bold;
+        }
+        
+        .busy {
+            background-color: #fed7d7;
+            color: #742a2a;
+            font-weight: bold;
+        }
+        
+        /* カレンダーのスタイル */
+        .calendar-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+        
+        .calendar-nav {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .calendar-nav:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .calendar-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .calendar th {
+            background-color: #4a90e2;
+            color: white;
+            padding: 15px 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .calendar td {
+            border: 1px solid #e0e0e0;
+            padding: 5px;
+            vertical-align: top;
+            height: 120px;
+            width: 14.28%;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .calendar td:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .calendar td.selected {
+            background-color: #e3f2fd;
+            border: 2px solid #2196f3;
+        }
+        
+        .calendar .date-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .calendar .other-month {
+            color: #ccc;
+            background-color: #f9f9f9;
+        }
+        
+        .calendar .today {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+        
+        .task {
+            background-color: #e3f2fd;
+            border-left: 3px solid #2196f3;
+            padding: 2px 4px;
+            margin: 1px 0;
+            font-size: 10px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .task:hover {
+            background-color: #bbdefb;
+            transform: scale(1.02);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .task.pending {
+            background-color: #f5f5f5;
+            border-left-color: #9e9e9e;
+            color: #424242;
+        }
+        
+        .task.in-progress {
+            background-color: #e1f5fe;
+            border-left-color: #03a9f4;
+            color: #0277bd;
+        }
+        
+        .task.waiting {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+            color: #e65100;
+        }
+        
+        .task.completed {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+        
+        /* コントロールのスタイル */
+        .controls {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .date-selector {
+            margin-bottom: 15px;
+        }
+        
+        .date-selector input {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            margin: 0 10px;
+        }
+        
+        .legend {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .legend h3 {
+            margin: 0 0 15px 0;
+            color: #2d3748;
+        }
+        
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+        
+        /* 新規依頼フォーム */
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        /* 実施日選択の新しいスタイル */
+        .date-selection-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+        }
+        
+        .date-method-selector {
+            margin-bottom: 15px;
+        }
+        
+        .date-method-selector label {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        .date-method-selector input[type="radio"] {
+            margin-right: 5px;
+            width: auto;
+        }
+        
+        .date-input-container {
+            display: none;
+        }
+        
+        .date-input-container.active {
+            display: block;
+        }
+        
+        .date-range-inputs {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .date-range-inputs .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .date-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: white;
+        }
+        
+        .date-button {
+            padding: 8px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+        
+        .date-button:hover {
+            background-color: #e6f3ff;
+        }
+        
+        .date-button.selected {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        
+        .date-button.disabled {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .selected-dates-display {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #2c5282;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row, .date-range-inputs {
+                flex-direction: column;
+            }
+            
+            .calendar td {
+                height: 80px;
+                font-size: 10px;
+            }
+            
+            .task {
+                font-size: 8px;
+                padding: 1px 2px;
+            }
+            
+            .schedule-table {
+                font-size: 12px;
+            }
+            
+            .schedule-table th,
+            .schedule-table td {
+                padding: 8px 5px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+            
+            .date-buttons-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>依頼管理・スケジュール統合ツール</h1>
+            <p id="current-date"></p>
+        </div>
+        
+        <div class="tab-container">
+            <button class="tab active" onclick="switchTab('calendar')">カレンダー・依頼管理</button>
+            <button class="tab" onclick="switchTab('schedule')">メンバースケジュール</button>
+        </div>
+        
+        <!-- カレンダー・依頼管理タブ -->
+        <div id="calendar-tab" class="tab-content active">
+            <!-- 新規依頼フォーム -->
+            <div class="form-container">
+                <h3>新規依頼登録</h3>
+                <form id="new-task-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="task-title">依頼内容</label>
+                            <input type="text" id="task-title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-requester">依頼者名</label>
+                            <input type="text" id="task-requester" placeholder="依頼者名を入力">
+                        </div>
+                    </div>
+                    
+                    <!-- 実施予定日の設定方法 -->
+                    <div class="date-selection-container">
+                        <label style="font-weight: bold; margin-bottom: 10px; display: block;">実施予定日の設定方法</label>
+                        <div class="date-method-selector">
+                            <label>
+                                <input type="radio" name="date-method" value="single" checked>
+                                単一日
+                            </label>
+                            <label>
+                                <input type="radio" name="date-method" value="range">
+                                期間
+                            </label>
+                            <label>
+                                <input type="radio" name="date-method" value="multiple">
+                                複数日選択
+                            </label>
+                        </div>
+                        
+                        <!-- 単一日入力 -->
+                        <div class="date-input-container active" id="single-date-container">
+                            <div class="form-group">
+                                <label for="single-date">実施予定日</label>
+                                <input type="date" id="single-date" min="2025-08-01">
+                            </div>
+                        </div>
+                        
+                        <!-- 期間入力 -->
+                        <div class="date-input-container" id="range-date-container">
+                            <div class="date-range-inputs">
+                                <div class="form-group">
+                                    <label for="start-date">開始日 *</label>
+                                    <input type="date" id="start-date" min="2025-08-01">
+                                </div>
+                                <div class="form-group">
+                                    <label for="end-date">終了日 *</label>
+                                    <input type="date" id="end-date" min="2025-08-01">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 複数日選択 -->
+                        <div class="date-input-container" id="multiple-date-container">
+                            <label style="font-weight: bold; margin-bottom: 10px; display: block;">実施予定日を選択</label>
+                            <div class="date-buttons-grid" id="date-buttons-grid">
+                                <!-- JavaScriptで動的に生成 -->
+                            </div>
+                            <div class="selected-dates-display" id="selected-dates-display">
+                                選択中: 0日
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="task-assignee">担当者</label>
+                            <input type="text" id="task-assignee" placeholder="担当者名を入力（例：南、長谷川）">
+                        </div>
+                        <div class="form-group">
+                            <label for="task-status">ステータス</label>
+                            <select id="task-status">
+                                <option value="pending">未対応</option>
+                                <option value="in-progress">対応中</option>
+                                <option value="waiting">確認待ち</option>
+                                <option value="completed">完了</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-notes">備考</label>
+                        <textarea id="task-notes" placeholder="詳細情報、場所、注意事項など"></textarea>
+                    </div>
+                    <button type="submit" class="btn">依頼を追加</button>
+                </form>
+            </div>
+            
+            <!-- カレンダー -->
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+                    <div class="calendar-title" id="calendar-title"></div>
+                    <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+                </div>
+                <table class="calendar" id="calendar"></table>
+                
+                <!-- カレンダー凡例 -->
+                <div class="legend">
+                    <h3>ステータス凡例</h3>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: #f5f5f5; border: 1px solid #9e9e9e;"></span>
+                        未対応
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: #e1f5fe; border: 1px solid #03a9f4;"></span>
+                        対応中
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: #fff3e0; border: 1px solid #ff9800;"></span>
+                        確認待ち
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: #e8f5e8; border: 1px solid #4caf50;"></span>
+                        完了
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- メンバースケジュールタブ -->
+        <div id="schedule-tab" class="tab-content">
+            <div class="controls">
+                <div class="date-selector">
+                    <label for="schedule-date">日付選択:</label>
+                    <input type="date" id="schedule-date">
+                    <button class="btn" onclick="updateScheduleDate()">更新</button>
+                </div>
+                <button class="btn" onclick="resetSchedule()">リセット</button>
+            </div>
+            
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>メンバー</th>
+                        <th>時間帯</th>
+                        <th>ステータス</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-body">
+                    <!-- 南 亮介 -->
+                    <tr>
+                        <td rowspan="2" class="member-name">南 亮介</td>
+                        <td class="time-label">AM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    <tr>
+                        <td class="time-label">PM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    
+                    <!-- 長谷川 なみこ -->
+                    <tr>
+                        <td rowspan="2" class="member-name">長谷川 なみこ</td>
+                        <td class="time-label">AM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    <tr>
+                        <td class="time-label">PM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    
+                    <!-- 平野 真帆 -->
+                    <tr>
+                        <td rowspan="2" class="member-name">平野 真帆</td>
+                        <td class="time-label">AM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    <tr>
+                        <td class="time-label">PM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    
+                    <!-- 中村 勇紀 -->
+                    <tr>
+                        <td rowspan="2" class="member-name">中村 勇紀</td>
+                        <td class="time-label">AM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    <tr>
+                        <td class="time-label">PM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    
+                    <!-- 藤井 達也 -->
+                    <tr>
+                        <td rowspan="2" class="member-name">藤井 達也</td>
+                        <td class="time-label">AM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                    <tr>
+                        <td class="time-label">PM</td>
+                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="legend">
+                <h3>ステータス凡例</h3>
+                <div class="legend-item">
+                    <span class="legend-color available"></span>
+                    空き
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color service-g"></span>
+                    サービスG業務担当
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color busy"></span>
+                    予定あり
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 依頼編集モーダル -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>依頼編集</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <form id="edit-task-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-task-title">依頼内容</label>
+                        <input type="text" id="edit-task-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-requester">依頼者名</label>
+                        <input type="text" id="edit-task-requester" placeholder="依頼者名を入力">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-task-assignee">担当者</label>
+                        <input type="text" id="edit-task-assignee" placeholder="担当者名を入力">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-status">ステータス</label>
+                        <select id="edit-task-status">
+                            <option value="pending">未対応</option>
+                            <option value="in-progress">対応中</option>
+                            <option value="waiting">確認待ち</option>
+                            <option value="completed">完了</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-task-notes">備考</label>
+                    <textarea id="edit-task-notes" placeholder="詳細情報、場所、注意事項など"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-delete" onclick="deleteTask()">削除</button>
+                    <button type="submit" class="btn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- カレンダーセルクリック新規依頼モーダル -->
+    <div id="calendar-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新規依頼登録</h2>
+                <span class="close" onclick="closeCalendarModal()">&times;</span>
+            </div>
+            <form id="calendar-task-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="calendar-task-title">依頼内容</label>
+                        <input type="text" id="calendar-task-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="calendar-task-requester">依頼者名</label>
+                        <input type="text" id="calendar-task-requester" placeholder="依頼者名を入力">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="calendar-task-date">実施予定日</label>
+                    <input type="date" id="calendar-task-date" readonly style="background-color: #f8f9fa;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="calendar-task-assignee">担当者</label>
+                        <input type="text" id="calendar-task-assignee" placeholder="担当者名を入力">
+                    </div>
+                    <div class="form-group">
+                        <label for="calendar-task-status">ステータス</label>
+                        <select id="calendar-task-status">
+                            <option value="pending">未対応</option>
+                            <option value="in-progress">対応中</option>
+                            <option value="waiting">確認待ち</option>
+                            <option value="completed">完了</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="calendar-task-notes">備考</label>
+                    <textarea id="calendar-task-notes" placeholder="詳細情報、場所、注意事項など"></textarea>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="submit" class="btn">依頼を追加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let currentDate = new Date(2025, 7, 1); // 2025年8月に設定
+        let editingTaskIndex = -1;
+        let selectedDates = []; // 選択された実施予定日
+        let selectedDateCell = null; // 選択されたカレンダーセル
+
+        // 日付処理用のヘルパー関数（タイムゾーンに依存しない）
+        function formatDateToYYYYMMDD(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 文字列日付をDateオブジェクトに変換（ローカル時間で）
+        function parseLocalDate(dateStr) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        // 依頼データ（空の配列に初期化）
+        let tasks = [];
+
+        // タブ切り替え
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'calendar') {
+                renderCalendar();
+            }
+        }
+
+        // 現在の日付を表示
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                weekday: 'long' 
+            };
+            document.getElementById('current-date').textContent = 
+                now.toLocaleDateString('ja-JP', options);
+            
+            document.getElementById('schedule-date').value = formatDateToYYYYMMDD(now);
+        }
+
+        // カレンダーセルクリック（新規依頼登録モーダルを開く）
+        function cellClick(dateStr) {
+            // タスクがクリックされた場合は何もしない
+            if (event.target.classList.contains('task')) {
+                return;
+            }
+            
+            if (selectedDateCell) {
+                selectedDateCell.classList.remove('selected');
+            }
+            selectedDateCell = event.target.closest('td');
+            selectedDateCell.classList.add('selected');
+            
+            // 新規依頼登録モーダルを開く
+            document.getElementById('calendar-task-date').value = dateStr;
+            document.getElementById('calendar-modal').style.display = 'block';
+        }
+
+        // カレンダーモーダルを閉じる
+        function closeCalendarModal() {
+            document.getElementById('calendar-modal').style.display = 'none';
+            document.getElementById('calendar-task-form').reset();
+            document.getElementById('calendar-task-status').value = 'pending';
+            if (selectedDateCell) {
+                selectedDateCell.classList.remove('selected');
+                selectedDateCell = null;
+            }
+        }
+
+        // 実施予定日の設定方法変更
+        document.addEventListener('change', function(e) {
+            if (e.target.name === 'date-method') {
+                const method = e.target.value;
+                
+                // すべてのコンテナを非表示
+                document.querySelectorAll('.date-input-container').forEach(container => {
+                    container.classList.remove('active');
+                });
+                
+                // 選択されたコンテナを表示
+                document.getElementById(method + '-date-container').classList.add('active');
+                
+                // 複数日選択のリセット
+                if (method !== 'multiple') {
+                    selectedDates = [];
+                    document.querySelectorAll('.date-button').forEach(btn => btn.classList.remove('selected'));
+                    updateSelectedDatesDisplay();
+                }
+            }
+        });
+
+        // 実施予定日選択関数（8/1から開始するように修正）
+        function generateDateButtons() {
+            const grid = document.getElementById('date-buttons-grid');
+            // 2025年8月1日から開始
+            const startDate = new Date(2025, 7, 1); // 月は0ベースなので7が8月
+            const endDate = new Date(startDate);
+            endDate.setMonth(endDate.getMonth() + 2); // 2ヶ月後まで表示
+
+            grid.innerHTML = '';
+            
+            const currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                const dateStr = formatDateToYYYYMMDD(currentDate);
+                const dayName = currentDate.toLocaleDateString('ja-JP', { weekday: 'short' });
+                const button = document.createElement('div');
+                button.className = 'date-button';
+                button.textContent = `${currentDate.getMonth() + 1}/${currentDate.getDate()}\n${dayName}`;
+                button.dataset.date = dateStr;
+                button.onclick = () => selectDate(dateStr, button);
+                
+                grid.appendChild(button);
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+
+        function selectDate(dateStr, button) {
+            const method = document.querySelector('input[name="date-method"]:checked').value;
+            
+            if (method === 'multiple') {
+                // 複数日選択
+                if (selectedDates.includes(dateStr)) {
+                    selectedDates = selectedDates.filter(d => d !== dateStr);
+                    button.classList.remove('selected');
+                } else {
+                    selectedDates.push(dateStr);
+                    button.classList.add('selected');
+                }
+                updateSelectedDatesDisplay();
+            }
+        }
+
+        function updateSelectedDatesDisplay() {
+            const display = document.getElementById('selected-dates-display');
+            display.textContent = `選択中: ${selectedDates.length}日`;
+        }
+
+        // カレンダー関連の関数（完全に修正）
+        function renderCalendar() {
+            const calendar = document.getElementById('calendar');
+            const title = document.getElementById('calendar-title');
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            title.textContent = `${year}年${month + 1}月`;
+            
+            const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+            let calendarHTML = '<thead><tr>';
+            daysOfWeek.forEach(day => {
+                calendarHTML += `<th>${day}</th>`;
+            });
+            calendarHTML += '</tr></thead><tbody>';
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            let currentWeekDate = new Date(startDate);
+            
+            for (let week = 0; week < 6; week++) {
+                calendarHTML += '<tr>';
+                for (let day = 0; day < 7; day++) {
+                    const dateStr = formatDateToYYYYMMDD(currentWeekDate);
+                    const isCurrentMonth = currentWeekDate.getMonth() === month;
+                    const isToday = dateStr === formatDateToYYYYMMDD(new Date());
+                    
+                    let cellClass = '';
+                    if (!isCurrentMonth) cellClass += 'other-month ';
+                    if (isToday) cellClass += 'today ';
+                    
+                    // タスクの日付比較を完全に文字列で行う
+                    const dayTasks = tasks.filter(task => 
+                        task.implementationDates && task.implementationDates.includes(dateStr)
+                    );
+                    
+                    let tasksHTML = '';
+                    dayTasks.forEach((task, index) => {
+                        let taskClass = `task ${task.status || 'pending'}`;
+                        
+                        const assigneeStr = task.assignee ? ` [${task.assignee}]` : '';
+                        const requesterStr = task.requester ? ` (${task.requester})` : '';
+                        
+                        const tooltipText = `${task.title}${assigneeStr}${requesterStr}${task.notes ? ' - ' + task.notes : ''}`;
+                        
+                        const globalIndex = tasks.findIndex(t => t === task);
+                        
+                        tasksHTML += `<div class="${taskClass}" title="${tooltipText}" onclick="openEditModal(${globalIndex}); event.stopPropagation();">${task.title.substring(0, 15)}${task.title.length > 15 ? '...' : ''}</div>`;
+                    });
+                    
+                    calendarHTML += `<td class="${cellClass}" onclick="cellClick('${dateStr}')" data-date="${dateStr}">
+                        <div class="date-number">${currentWeekDate.getDate()}</div>
+                        ${tasksHTML}
+                    </td>`;
+                    
+                    currentWeekDate.setDate(currentWeekDate.getDate() + 1);
+                }
+                calendarHTML += '</tr>';
+            }
+            
+            calendarHTML += '</tbody>';
+            calendar.innerHTML = calendarHTML;
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // 依頼編集モーダル関連の関数
+        function openEditModal(taskIndex) {
+            editingTaskIndex = taskIndex;
+            const task = tasks[taskIndex];
+            
+            document.getElementById('edit-task-title').value = task.title || '';
+            document.getElementById('edit-task-requester').value = task.requester || '';
+            document.getElementById('edit-task-assignee').value = task.assignee || '';
+            document.getElementById('edit-task-status').value = task.status || 'pending';
+            document.getElementById('edit-task-notes').value = task.notes || '';
+            
+            document.getElementById('edit-modal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            editingTaskIndex = -1;
+        }
+
+        function deleteTask() {
+            if (editingTaskIndex >= 0 && confirm('この依頼を削除しますか？')) {
+                tasks.splice(editingTaskIndex, 1);
+                closeEditModal();
+                renderCalendar();
+                alert('依頼が削除されました。');
+            }
+        }
+
+        // モーダル外クリックで閉じる
+        window.onclick = function(event) {
+            const editModal = document.getElementById('edit-modal');
+            const calendarModal = document.getElementById('calendar-modal');
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+            if (event.target === calendarModal) {
+                closeCalendarModal();
+            }
+        }
+
+        // 依頼編集フォームの送信
+        document.getElementById('edit-task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (editingTaskIndex >= 0) {
+                tasks[editingTaskIndex] = {
+                    ...tasks[editingTaskIndex],
+                    title: document.getElementById('edit-task-title').value,
+                    requester: document.getElementById('edit-task-requester').value,
+                    assignee: document.getElementById('edit-task-assignee').value,
+                    status: document.getElementById('edit-task-status').value,
+                    notes: document.getElementById('edit-task-notes').value
+                };
+                
+                closeEditModal();
+                renderCalendar();
+                alert('依頼が更新されました！');
+            }
+        });
+
+        // カレンダーから新規タスク追加
+        document.getElementById('calendar-task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedDate = document.getElementById('calendar-task-date').value;
+            
+            const newTask = {
+                title: document.getElementById('calendar-task-title').value,
+                requester: document.getElementById('calendar-task-requester').value,
+                assignee: document.getElementById('calendar-task-assignee').value || '未定',
+                status: document.getElementById('calendar-task-status').value,
+                notes: document.getElementById('calendar-task-notes').value,
+                implementationDates: [selectedDate]
+            };
+            
+            tasks.push(newTask);
+            renderCalendar();
+            closeCalendarModal();
+            
+            alert('依頼が追加されました！');
+        });
+
+        // メインフォームから新規タスク追加
+        document.getElementById('new-task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const method = document.querySelector('input[name="date-method"]:checked').value;
+            let implementationDates = [];
+            
+            if (method === 'single') {
+                const singleDate = document.getElementById('single-date').value;
+                if (!singleDate) {
+                    alert('実施予定日を選択してください。');
+                    return;
+                }
+                implementationDates = [singleDate];
+            } else if (method === 'range') {
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                
+                if (!startDate || !endDate) {
+                    alert('開始日と終了日を選択してください。');
+                    return;
+                }
+                
+                if (new Date(endDate) < new Date(startDate)) {
+                    alert('終了日は開始日以降を選択してください。');
+                    return;
+                }
+                
+                // 期間内の全ての日付を生成
+                const current = new Date(startDate);
+                const end = new Date(endDate);
+                while (current <= end) {
+                    implementationDates.push(formatDateToYYYYMMDD(current));
+                    current.setDate(current.getDate() + 1);
+                }
+            } else if (method === 'multiple') {
+                if (selectedDates.length === 0) {
+                    alert('実施予定日を選択してください。');
+                    return;
+                }
+                implementationDates = [...selectedDates];
+            }
+            
+            const newTask = {
+                title: document.getElementById('task-title').value,
+                requester: document.getElementById('task-requester').value,
+                assignee: document.getElementById('task-assignee').value || '未定',
+                status: document.getElementById('task-status').value,
+                notes: document.getElementById('task-notes').value,
+                implementationDates: implementationDates
+            };
+            
+            tasks.push(newTask);
+            renderCalendar();
+            
+            // フォームをリセット
+            this.reset();
+            selectedDates = [];
+            document.querySelectorAll('.date-button').forEach(btn => btn.classList.remove('selected'));
+            updateSelectedDatesDisplay();
+            
+            // デフォルト値を再設定
+            document.getElementById('task-status').value = 'pending';
+            
+            // 日付入力をクリア
+            document.getElementById('single-date').value = '';
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            
+            // 単一日の表示に戻す
+            document.querySelector('input[name="date-method"][value="single"]').checked = true;
+            document.querySelectorAll('.date-input-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            document.getElementById('single-date-container').classList.add('active');
+            
+            alert('依頼が追加されました！');
+        });
+
+        // スケジュール表関連の関数
+        function toggleStatus(element) {
+            const statuses = ['available', 'service-g', 'busy'];
+            const statusTexts = ['空き', 'サービスG業務担当', '予定あり'];
+            
+            statuses.forEach(status => {
+                element.classList.remove(status);
+            });
+            
+            let currentIndex = -1;
+            for (let i = 0; i < statusTexts.length; i++) {
+                if (element.textContent === statusTexts[i]) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+            
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            element.classList.add(statuses[nextIndex]);
+            element.textContent = statusTexts[nextIndex];
+        }
+
+        function updateScheduleDate() {
+            const selectedDate = document.getElementById('schedule-date').value;
+            if (selectedDate) {
+                const date = parseLocalDate(selectedDate);
+                const options = { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric', 
+                    weekday: 'long' 
+                };
+                document.getElementById('current-date').textContent = 
+                    date.toLocaleDateString('ja-JP', options);
+            }
+        }
+
+        function resetSchedule() {
+            if (confirm('スケジュールをリセットしますか？')) {
+                const timeSlots = document.querySelectorAll('.time-slot');
+                timeSlots.forEach(slot => {
+                    slot.classList.remove('service-g', 'busy');
+                    slot.classList.add('available');
+                    slot.textContent = '空き';
+                });
+                
+                alert('スケジュールがリセットされました。');
+            }
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentDate();
+            renderCalendar();
+            generateDateButtons();
+            
+            // デフォルト値を設定
+            document.getElementById('task-status').value = 'pending';
+            document.getElementById('calendar-task-status').value = 'pending';
+            
+            // 最小日付を設定
+            const minDate = '2025-08-01';
+            document.getElementById('single-date').min = minDate;
+            document.getElementById('start-date').min = minDate;
+            document.getElementById('end-date').min = minDate;
+            
+            console.log('空の依頼管理ツールが初期化されました');
+        });
+
+        // キーボードショートカット
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closeCalendarModal();
+            }
+        });
+    </script>
+</body>
+</html>
