@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>統合プロジェクト管理ツール（リアルタイム同期対応版）</title>
+    <title>依頼管理ツール</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -387,6 +387,45 @@
             color: #2d3748;
             width: 120px;
             vertical-align: middle;
+            position: relative;
+        }
+        
+        .member-name .edit-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        
+        .member-name .edit-btn:hover {
+            opacity: 1;
+        }
+        
+        .member-controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .member-controls button {
+            margin: 0 5px;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .member-controls button:hover {
+            background: #5a67d8;
         }
         
         .time-label {
@@ -837,7 +876,7 @@
 
     <div class="container">
         <div class="header">
-            <h1>統合プロジェクト管理ツール（リアルタイム同期対応版）</h1>
+            <h1>依頼管理ツール</h1>
             <p id="current-date"></p>
             
             <!-- リアルタイム同期ステータス -->
@@ -1054,10 +1093,14 @@
                     <input type="date" id="schedule-date">
                     <button class="btn" onclick="updateScheduleDate()">更新</button>
                 </div>
+                <div class="member-controls">
+                    <button onclick="addMember()">メンバー追加</button>
+                    <button onclick="editMembers()">メンバー編集</button>
+                </div>
                 <button class="btn" onclick="resetSchedule()">リセット</button>
             </div>
             
-            <table class="schedule-table">
+            <table class="schedule-table" id="schedule-table">
                 <thead>
                     <tr>
                         <th>メンバー</th>
@@ -1066,60 +1109,7 @@
                     </tr>
                 </thead>
                 <tbody id="schedule-body">
-                    <!-- 青 亮介 -->
-                    <tr>
-                        <td rowspan="2" class="member-name">青 亮介</td>
-                        <td class="time-label">AM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
-                    </tr>
-                    <tr>
-                        <td class="time-label">PM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
-                    </tr>
-                    
-                    <!-- 長谷川 なみこ -->
-                    <tr>
-                        <td rowspan="2" class="member-name">長谷川 なみこ</td>
-                        <td class="time-label">AM</td>
-                        <td class="time-slot busy" onclick="toggleStatus(this)">予定あり</td>
-                    </tr>
-                    <tr>
-                        <td class="time-label">PM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
-                    </tr>
-                    
-                    <!-- 平野 真帆 -->
-                    <tr>
-                        <td rowspan="2" class="member-name">平野 真帆</td>
-                        <td class="time-label">AM</td>
-                        <td class="time-slot service-g" onclick="toggleStatus(this)">サービスG業務担当</td>
-                    </tr>
-                    <tr>
-                        <td class="time-label">PM</td>
-                        <td class="time-slot service-g" onclick="toggleStatus(this)">サービスG業務担当</td>
-                    </tr>
-                    
-                    <!-- 中村 勇紀 -->
-                    <tr>
-                        <td rowspan="2" class="member-name">中村 勇紀</td>
-                        <td class="time-label">AM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
-                    </tr>
-                    <tr>
-                        <td class="time-label">PM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
-                    </tr>
-                    
-                    <!-- 鈴井 達也 -->
-                    <tr>
-                        <td rowspan="2" class="member-name">鈴井 達也</td>
-                        <td class="time-label">AM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
-                    </tr>
-                    <tr>
-                        <td class="time-label">PM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
-                    </tr>
+                    <!-- JavaScriptで動的に生成 -->
                 </tbody>
             </table>
             
@@ -1260,6 +1250,26 @@
         </div>
     </div>
 
+    <!-- メンバー編集モーダル -->
+    <div id="member-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>メンバー管理</h2>
+                <span class="close" onclick="closeMemberModal()">&times;</span>
+            </div>
+            <div id="member-list">
+                <!-- JavaScriptで動的に生成 -->
+            </div>
+            <div style="margin-top: 20px;">
+                <input type="text" id="new-member-name" placeholder="新しいメンバー名を入力" style="width: 70%; padding: 8px; margin-right: 10px;">
+                <button class="btn" onclick="addNewMember()">追加</button>
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn" onclick="saveMemberChanges()">保存</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // グローバル変数
         let currentDate = new Date(2025, 7, 1); // 2025年8月に設定
@@ -1279,6 +1289,7 @@
             SCHEDULES: 'collaborative_schedules_v2',
             SIGN_PROJECTS: 'collaborative_sign_projects_v2',
             CHECKLIST: 'collaborative_checklist_v2',
+            MEMBERS: 'collaborative_members_v2',
             LAST_SYNC: 'last_sync_time_v2',
             DATA_VERSION: 'data_version_v2'
         };
@@ -1288,6 +1299,13 @@
         let schedules = {};
         let signProjects = [];
         let checklist = [];
+        let members = [
+            { name: "青 亮介", id: "aoi" },
+            { name: "長谷川 なみこ", id: "hasegawa" },
+            { name: "平野 真帆", id: "hirano" },
+            { name: "中村 勇紀", id: "nakamura" },
+            { name: "藤井 達也", id: "fujii" } // 鈴井 達也から変更
+        ];
 
         // 日付処理用のヘルパー関数（タイムゾーンに依存しない）
         function formatDateToYYYYMMDD(date) {
@@ -1347,7 +1365,7 @@
 
             // 4. 定期的なデータ整合性チェック
             syncInterval = setInterval(function() {
-                const currentHash = generateDataHash({tasks, schedules, signProjects, checklist});
+                const currentHash = generateDataHash({tasks, schedules, signProjects, checklist, members});
                 if (currentDataHash && currentDataHash !== currentHash) {
                     console.log('データ変更を検知 - 自動保存実行');
                     autoSaveData();
@@ -1402,7 +1420,7 @@
 
         // データ変更の監視
         function monitorDataChanges() {
-            const newHash = generateDataHash({tasks, schedules, signProjects, checklist});
+            const newHash = generateDataHash({tasks, schedules, signProjects, checklist, members});
             if (currentDataHash && currentDataHash !== newHash) {
                 currentDataHash = newHash;
                 scheduleAutoSave();
@@ -1833,6 +1851,7 @@
                     schedules: schedules,
                     signProjects: signProjects,
                     checklist: checklist,
+                    members: members,
                     lastSync: Date.now(),
                     version: parseInt(localStorage.getItem(STORAGE_KEYS.DATA_VERSION) || '0') + 1
                 };
@@ -1841,6 +1860,7 @@
                 localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(schedules));
                 localStorage.setItem(STORAGE_KEYS.SIGN_PROJECTS, JSON.stringify(signProjects));
                 localStorage.setItem(STORAGE_KEYS.CHECKLIST, JSON.stringify(checklist));
+                localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(members));
                 localStorage.setItem(STORAGE_KEYS.LAST_SYNC, allData.lastSync.toString());
                 localStorage.setItem(STORAGE_KEYS.DATA_VERSION, allData.version.toString());
                 
@@ -1863,6 +1883,7 @@
                 const savedSchedules = localStorage.getItem(STORAGE_KEYS.SCHEDULES);
                 const savedSignProjects = localStorage.getItem(STORAGE_KEYS.SIGN_PROJECTS);
                 const savedChecklist = localStorage.getItem(STORAGE_KEYS.CHECKLIST);
+                const savedMembers = localStorage.getItem(STORAGE_KEYS.MEMBERS);
                 
                 if (savedTasks) {
                     tasks = JSON.parse(savedTasks);
@@ -1881,8 +1902,12 @@
                     checklist = JSON.parse(savedChecklist);
                 }
                 
+                if (savedMembers) {
+                    members = JSON.parse(savedMembers);
+                }
+                
                 updateLastSyncTime();
-                currentDataHash = generateDataHash({tasks, schedules, signProjects, checklist});
+                currentDataHash = generateDataHash({tasks, schedules, signProjects, checklist, members});
                 console.log('データが読み込まれました');
             } catch (error) {
                 console.error('データ読み込みエラー:', error);
@@ -1896,11 +1921,132 @@
                 renderCalendar();
                 renderSignTable();
                 renderChecklistTable();
+                renderScheduleTable();
                 restoreScheduleStates();
                 console.log('全要素の再描画完了');
             } catch (error) {
                 console.error('再描画エラー:', error);
             }
+        }
+
+        // スケジュール表の描画
+        function renderScheduleTable() {
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+            
+            members.forEach((member, memberIndex) => {
+                // AM行
+                const amRow = document.createElement('tr');
+                amRow.innerHTML = `
+                    <td rowspan="2" class="member-name">
+                        ${member.name}
+                        <button class="edit-btn" onclick="editMemberName(${memberIndex})" title="名前を編集">✏️</button>
+                    </td>
+                    <td class="time-label">AM</td>
+                    <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                `;
+                tbody.appendChild(amRow);
+                
+                // PM行
+                const pmRow = document.createElement('tr');
+                pmRow.innerHTML = `
+                    <td class="time-label">PM</td>
+                    <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                `;
+                tbody.appendChild(pmRow);
+            });
+        }
+
+        // メンバー名の編集
+        function editMemberName(memberIndex) {
+            const newName = prompt('新しい名前を入力してください:', members[memberIndex].name);
+            if (newName && newName.trim()) {
+                members[memberIndex].name = newName.trim();
+                renderScheduleTable();
+                restoreScheduleStates();
+                scheduleAutoSave();
+                showAutoSaveNotification('success', 'メンバー名が更新されました');
+            }
+        }
+
+        // メンバー追加
+        function addMember() {
+            const newName = prompt('新しいメンバー名を入力してください:');
+            if (newName && newName.trim()) {
+                const newId = 'member_' + Date.now();
+                members.push({
+                    name: newName.trim(),
+                    id: newId
+                });
+                renderScheduleTable();
+                scheduleAutoSave();
+                showAutoSaveNotification('success', 'メンバーが追加されました');
+            }
+        }
+
+        // メンバー編集モーダルを開く
+        function editMembers() {
+            renderMemberList();
+            document.getElementById('member-modal').style.display = 'block';
+        }
+
+        // メンバーリストの描画
+        function renderMemberList() {
+            const memberList = document.getElementById('member-list');
+            memberList.innerHTML = '';
+            
+            members.forEach((member, index) => {
+                const memberDiv = document.createElement('div');
+                memberDiv.style.cssText = 'display: flex; align-items: center; margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;';
+                memberDiv.innerHTML = `
+                    <input type="text" value="${member.name}" onchange="updateMemberName(${index}, this.value)" style="flex: 1; margin-right: 10px; padding: 5px;">
+                    <button class="btn-delete" style="font-size: 12px; padding: 5px 10px;" onclick="deleteMember(${index})">削除</button>
+                `;
+                memberList.appendChild(memberDiv);
+            });
+        }
+
+        // メンバー名の更新
+        function updateMemberName(index, newName) {
+            if (newName && newName.trim()) {
+                members[index].name = newName.trim();
+            }
+        }
+
+        // メンバー削除
+        function deleteMember(index) {
+            if (confirm('このメンバーを削除しますか？')) {
+                members.splice(index, 1);
+                renderMemberList();
+            }
+        }
+
+        // 新しいメンバーを追加
+        function addNewMember() {
+            const newName = document.getElementById('new-member-name').value.trim();
+            if (newName) {
+                const newId = 'member_' + Date.now();
+                members.push({
+                    name: newName,
+                    id: newId
+                });
+                renderMemberList();
+                document.getElementById('new-member-name').value = '';
+            }
+        }
+
+        // メンバー変更を保存
+        function saveMemberChanges() {
+            renderScheduleTable();
+            restoreScheduleStates();
+            scheduleAutoSave();
+            closeMemberModal();
+            showAutoSaveNotification('success', 'メンバー情報が保存されました');
+        }
+
+        // メンバーモーダルを閉じる
+        function closeMemberModal() {
+            document.getElementById('member-modal').style.display = 'none';
         }
 
         // スケジュール状態の復元
@@ -1963,6 +2109,7 @@
                     schedules: schedules,
                     signProjects: signProjects,
                     checklist: checklist,
+                    members: members,
                     lastSync: Date.now(),
                     sharedAt: new Date().toISOString()
                 };
@@ -1990,6 +2137,7 @@
                 if (sharedData.schedules) schedules = sharedData.schedules;
                 if (sharedData.signProjects) signProjects = sharedData.signProjects;
                 if (sharedData.checklist) checklist = sharedData.checklist;
+                if (sharedData.members) members = sharedData.members;
                 
                 autoSaveData();
                 renderAll();
@@ -2030,6 +2178,7 @@
                     schedules: schedules,
                     signProjects: signProjects,
                     checklist: checklist,
+                    members: members,
                     exportedAt: new Date().toISOString(),
                     version: localStorage.getItem(STORAGE_KEYS.DATA_VERSION) || '1'
                 };
@@ -2087,6 +2236,7 @@
             if (tabName === 'calendar') {
                 renderCalendar();
             } else if (tabName === 'schedule') {
+                renderScheduleTable();
                 restoreScheduleStates();
             } else if (tabName === 'signage') {
                 renderSignTable();
@@ -2478,6 +2628,7 @@
             const editModal = document.getElementById('edit-modal');
             const calendarModal = document.getElementById('calendar-modal');
             const shareModal = document.getElementById('share-modal');
+            const memberModal = document.getElementById('member-modal');
             
             if (event.target === editModal) {
                 closeEditModal();
@@ -2487,6 +2638,9 @@
             }
             if (event.target === shareModal) {
                 closeShareModal();
+            }
+            if (event.target === memberModal) {
+                closeMemberModal();
             }
         }
 
@@ -2695,7 +2849,7 @@
 
         // ページ読み込み時の初期化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('統合プロジェクト管理ツール（リアルタイム同期対応版）を初期化中...');
+            console.log('依頼管理ツールを初期化中...');
             
             // 初期データの設定
             initializeData();
@@ -2713,6 +2867,7 @@
             renderCalendar();
             renderSignTable();
             renderChecklistTable();
+            renderScheduleTable();
             generateDateButtons();
             
             // デフォルト値を設定
@@ -2731,7 +2886,7 @@
                 document.getElementById('active-users').textContent = users;
             }, 30000); // 30秒ごと
             
-            console.log('統合プロジェクト管理ツール（リアルタイム同期対応版）の初期化完了');
+            console.log('依頼管理ツールの初期化完了');
             showAutoSaveNotification('success', 'リアルタイム同期が開始されました');
         });
 
@@ -2741,6 +2896,7 @@
                 closeEditModal();
                 closeCalendarModal();
                 closeShareModal();
+                closeMemberModal();
             }
             
             // Ctrl+S で強制同期
