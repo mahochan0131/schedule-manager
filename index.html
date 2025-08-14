@@ -499,25 +499,25 @@
         }
         
         .task.pending {
-            background-color: #f5f5f5;
+            background-color: #e2e3e5;
             border-left-color: #9e9e9e;
             color: #424242;
         }
         
         .task.in-progress {
-            background-color: #e1f5fe;
+            background-color: #d1ecf1;
             border-left-color: #03a9f4;
             color: #0277bd;
         }
         
         .task.waiting {
-            background-color: #fff3e0;
+            background-color: #ffeaa7;
             border-left-color: #ff9800;
             color: #e65100;
         }
         
         .task.completed {
-            background-color: #e8f5e8;
+            background-color: #d4edda;
             border-left-color: #4caf50;
             color: #2e7d32;
         }
@@ -918,19 +918,19 @@
                 <div class="legend">
                     <h3>ステータス凡例</h3>
                     <div class="legend-item">
-                        <span class="legend-color" style="background-color: #f5f5f5; border: 1px solid #9e9e9e;"></span>
+                        <span class="legend-color" style="background-color: #e2e3e5; border: 1px solid #9e9e9e;"></span>
                         未対応
                     </div>
                     <div class="legend-item">
-                        <span class="legend-color" style="background-color: #e1f5fe; border: 1px solid #03a9f4;"></span>
+                        <span class="legend-color" style="background-color: #d1ecf1; border: 1px solid #03a9f4;"></span>
                         対応中
                     </div>
                     <div class="legend-item">
-                        <span class="legend-color" style="background-color: #fff3e0; border: 1px solid #ff9800;"></span>
+                        <span class="legend-color" style="background-color: #ffeaa7; border: 1px solid #ff9800;"></span>
                         確認待ち
                     </div>
                     <div class="legend-item">
-                        <span class="legend-color" style="background-color: #e8f5e8; border: 1px solid #4caf50;"></span>
+                        <span class="legend-color" style="background-color: #d4edda; border: 1px solid #4caf50;"></span>
                         完了
                     </div>
                 </div>
@@ -940,8 +940,8 @@
         <!-- 看板進捗管理タブ -->
         <div id="signage-tab" class="tab-content">
             <div class="controls">
-                <h3>看板依頼 進捗管理表</h3>
-                <p style="color: #666; font-size: 14px;">営業業務改善の一環として、小・中型物件の「測量＋看板落とし込み～見積依頼～デザインチェック」の工程を調査Gが担当。</p>
+                <h3>看板仕様 進捗管理表</h3>
+                <p style="color: #666; font-size: 14px;">営業担当者の一覧として、小・中型物件の「測量＋看板案を仕込み〜見積依頼〜デザインチェック」の工程を調整6が担当。</p>
                 <button class="btn" onclick="addSignProject()">新規案件追加</button>
                 <button class="btn" onclick="exportSignData()">データエクスポート</button>
             </div>
@@ -1013,9 +1013,9 @@
                     </tr>
                 </thead>
                 <tbody id="schedule-body">
-                    <!-- 南 亮介 -->
+                    <!-- 青 亮介 -->
                     <tr>
-                        <td rowspan="2" class="member-name">南 亮介</td>
+                        <td rowspan="2" class="member-name">青 亮介</td>
                         <td class="time-label">AM</td>
                         <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
                     </tr>
@@ -1028,7 +1028,7 @@
                     <tr>
                         <td rowspan="2" class="member-name">長谷川 なみこ</td>
                         <td class="time-label">AM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                        <td class="time-slot busy" onclick="toggleStatus(this)">予定あり</td>
                     </tr>
                     <tr>
                         <td class="time-label">PM</td>
@@ -1039,11 +1039,11 @@
                     <tr>
                         <td rowspan="2" class="member-name">平野 真帆</td>
                         <td class="time-label">AM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                        <td class="time-slot service-g" onclick="toggleStatus(this)">サービスG業務担当</td>
                     </tr>
                     <tr>
                         <td class="time-label">PM</td>
-                        <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
+                        <td class="time-slot service-g" onclick="toggleStatus(this)">サービスG業務担当</td>
                     </tr>
                     
                     <!-- 中村 勇紀 -->
@@ -1057,9 +1057,9 @@
                         <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
                     </tr>
                     
-                    <!-- 藤井 達也 -->
+                    <!-- 鈴井 達也 -->
                     <tr>
-                        <td rowspan="2" class="member-name">藤井 達也</td>
+                        <td rowspan="2" class="member-name">鈴井 達也</td>
                         <td class="time-label">AM</td>
                         <td class="time-slot available" onclick="toggleStatus(this)">空き</td>
                     </tr>
@@ -1188,6 +1188,8 @@
         let selectedDates = []; // 選択された実施予定日
         let selectedDateCell = null; // 選択されたカレンダーセル
         let autoSaveTimer = null; // 自動保存タイマー
+        let broadcastChannel; // リアルタイム同期用
+        let syncInterval; // 同期チェック間隔
 
         // 共同編集対応のためのローカルストレージキー
         const STORAGE_KEYS = {
@@ -1217,6 +1219,71 @@
         let schedules = {};
         let signProjects = [];
         let checklist = [];
+
+        // リアルタイム同期の初期化
+        function initRealTimeSync() {
+            // BroadcastChannel APIを使用（対応ブラウザのみ）
+            if ('BroadcastChannel' in window) {
+                broadcastChannel = new BroadcastChannel('project-management-sync');
+                broadcastChannel.onmessage = function(event) {
+                    if (event.data.type === 'data-update') {
+                        loadData();
+                        renderCalendar();
+                        renderSignTable();
+                        renderChecklistTable();
+                        restoreScheduleStates();
+                        console.log('BroadcastChannelからデータ同期完了');
+                    }
+                };
+            }
+
+            // localStorage変更イベント（別タブからの変更を検知）
+            window.addEventListener('storage', function(e) {
+                if (Object.values(STORAGE_KEYS).includes(e.key)) {
+                    loadData();
+                    renderCalendar();
+                    renderSignTable();
+                    renderChecklistTable();
+                    restoreScheduleStates();
+                    console.log('storageイベントからデータ同期完了');
+                }
+            });
+
+            // 定期的な同期チェック（1秒間隔）
+            syncInterval = setInterval(function() {
+                const lastSync = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
+                if (lastSync) {
+                    updateLastSyncTime();
+                }
+            }, 1000);
+
+            // ページ離脱時のクリーンアップ
+            window.addEventListener('beforeunload', function() {
+                if (broadcastChannel) {
+                    broadcastChannel.close();
+                }
+                if (syncInterval) {
+                    clearInterval(syncInterval);
+                }
+                autoSaveData(); // 最終保存
+            });
+
+            console.log('リアルタイム同期が初期化されました');
+        }
+
+        // データ更新の通知
+        function notifyDataUpdate() {
+            // BroadcastChannelで他のタブに通知
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({
+                    type: 'data-update',
+                    timestamp: Date.now()
+                });
+            }
+
+            // 同期タイムスタンプを更新
+            localStorage.setItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
+        }
 
         // 初期データの設定
         function initializeData() {
@@ -1467,6 +1534,7 @@
                 
                 updateLastSyncTime();
                 showAutoSaveNotification();
+                notifyDataUpdate(); // リアルタイム同期通知
                 
                 console.log('データが自動保存されました');
             } catch (error) {
@@ -1555,29 +1623,6 @@
             autoSaveTimer = setTimeout(() => {
                 autoSaveData();
             }, 1000); // 1秒後に自動保存
-        }
-
-        // データ変更の監視とリアルタイム同期
-        function startRealtimeSync() {
-            // 他のタブでの変更を監視
-            window.addEventListener('storage', function(e) {
-                if (Object.values(STORAGE_KEYS).includes(e.key)) {
-                    loadData();
-                    renderCalendar();
-                    renderSignTable();
-                    renderChecklistTable();
-                    restoreScheduleStates();
-                    console.log('他のタブからの変更を検出し、データを同期しました');
-                }
-            });
-            
-            // 定期的な同期チェック（5秒間隔）
-            setInterval(() => {
-                const lastSync = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
-                if (lastSync) {
-                    updateLastSyncTime();
-                }
-            }, 5000);
         }
 
         // タブ切り替え
@@ -2200,8 +2245,8 @@
             // データの読み込み
             loadData();
             
-            // リアルタイム同期の開始
-            startRealtimeSync();
+            // リアルタイム同期の初期化
+            initRealTimeSync();
             
             updateCurrentDate();
             renderCalendar();
@@ -2228,11 +2273,6 @@
                 closeEditModal();
                 closeCalendarModal();
             }
-        });
-
-        // ページを離れる前にデータを保存
-        window.addEventListener('beforeunload', function() {
-            autoSaveData();
         });
     </script>
 </body>
